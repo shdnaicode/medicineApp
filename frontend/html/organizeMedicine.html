@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="th">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>จัดยา (ยืนยันคำสั่งยา)</title>
+		<link rel="stylesheet" href="../css/styling.css" />
+		<style>
+			@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap");
+		</style>
+	</head>
+	<body>
+		<header class="headerBar">
+			<div class="innerHeaderBar">
+				<h1 class="innerHeaderTitle">โรงพยาบาลพุทธโสธร</h1>
+			</div>
+		</header>
+
+		<main class="pageContainer">
+			<section class="card">
+				<div class="cardHeader">
+					<h2 class="cardTitle">จัดยา (ตรวจสอบคำสั่งยา)</h2>
+					<div style="display: flex; gap: 10px; flex-wrap: wrap">
+						<a class="linkButton" href="orderMedicine.html">กลับไปแก้ไข</a>
+						<a class="linkButton" href="global.html">กลับหน้าหลัก</a>
+					</div>
+				</div>
+
+				<div id="missingDraft" class="sectionHint" style="display: none">
+					ไม่พบข้อมูลคำสั่งยา กรุณากลับไปที่หน้า “สั่งยา” เพื่อกรอกข้อมูลใหม่
+				</div>
+
+				<form class="form" aria-label="ตรวจสอบคำสั่งยา">
+					<div class="formGrid">
+						<label class="field">
+							<span class="label">วันที่</span>
+							<input class="input" type="date" id="date" disabled />
+						</label>
+
+						<label class="field">
+							<span class="label">ชื่อแพทย์</span>
+							<input class="input" type="text" id="doctorName" disabled />
+						</label>
+
+						<label class="field">
+							<span class="label">ชื่อผู้ป่วย</span>
+							<input class="input" type="text" id="patientName" disabled />
+						</label>
+
+						<label class="field">
+							<span class="label">เลข HN</span>
+							<input class="input" type="text" id="hn" disabled />
+						</label>
+					</div>
+
+					<div class="divider"></div>
+
+					<div class="sectionTitleRow">
+						<h3 class="sectionTitle">รายการยา</h3>
+						<p class="sectionHint">หน้านี้เป็นแบบอ่านอย่างเดียว (ไม่สามารถแก้ไขได้)</p>
+					</div>
+
+					<div class="orderedList">
+						<h3 class="sectionTitle">รายการยาที่สั่ง</h3>
+						<div class="tableWrap">
+							<table class="table" aria-label="รายการยาที่สั่ง">
+								<thead>
+									<tr>
+										<th>ชื่อยา</th>
+										<th>ขนาด</th>
+										<th>หน่วย</th>
+									</tr>
+								</thead>
+								<tbody id="orderedTableBody">
+									<tr class="emptyRow" id="emptyRow">
+										<td colspan="3">ยังไม่มีรายการยา</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<div class="divider"></div>
+
+					<div class="sectionTitleRow">
+						<h3 class="sectionTitle">วิธีต้มสมุนไพร</h3>
+						<p class="sectionHint">เลือกอย่างน้อย 1 วิธี</p>
+					</div>
+
+					<div class="checkboxList" role="group" aria-label="วิธีต้มสมุนไพร">
+						<label class="checkboxItem">
+							<input class="checkboxInput" type="checkbox" id="methodBoil" />
+							<span class="checkboxText">
+								<strong>วิธีการต้มเดือด</strong> : นำสมุนไพรใส่หม้อ ใส่น้ำ ท่วมตัวยาสมุนไพร จากนั้นต้มจนเดือดแล้วจับเวลา15นาที กรองยาเอาแค่น้ำ อุ่นยาทุกวันก่อนรับประทาน กินติดต่อกัน7วัน
+							</span>
+						</label>
+
+						<label class="checkboxItem">
+							<input class="checkboxInput" type="checkbox" id="methodSimmer" />
+							<span class="checkboxText">
+								<strong>วิธีการต้มเคี่ยว</strong> : ต้ม3ส่วนเอา1ส่วน ใส่น้ำ4เท่าของน้ำหนักยา(หรือประมาณ1.5ลิตร) จากนั้นต้มจนยาเหลือ1ใน3ของหม้อ แล้วทำซ้ำ3รอบ
+							</span>
+						</label>
+					</div>
+
+					<div class="formActions">
+						<button class="secondaryButton" type="button" id="backBtn">กลับไปหน้า “สั่งยา”</button>
+						<button class="primaryButton" type="button" id="confirmBtn">ยืนยันคำสั่งยา</button>
+					</div>
+				</form>
+			</section>
+		</main>
+
+		<script>
+			const missingDraft = document.getElementById("missingDraft");
+			const dateInput = document.getElementById("date");
+			const doctorNameInput = document.getElementById("doctorName");
+			const patientNameInput = document.getElementById("patientName");
+			const hnInput = document.getElementById("hn");
+			const orderedTableBody = document.getElementById("orderedTableBody");
+			const emptyRow = document.getElementById("emptyRow");
+			const confirmBtn = document.getElementById("confirmBtn");
+			const backBtn = document.getElementById("backBtn");
+			const methodBoil = document.getElementById("methodBoil");
+			const methodSimmer = document.getElementById("methodSimmer");
+
+			let draftCache = null;
+
+			function renderTable(orderedMedicines) {
+				orderedTableBody.querySelectorAll("tr[data-index]").forEach((row) => row.remove());
+
+				if (!Array.isArray(orderedMedicines) || orderedMedicines.length === 0) {
+					emptyRow.style.display = "table-row";
+					return;
+				}
+
+				emptyRow.style.display = "none";
+				orderedMedicines.forEach((item, index) => {
+					const tr = document.createElement("tr");
+					tr.dataset.index = String(index);
+
+					const tdName = document.createElement("td");
+					tdName.textContent = item?.name ?? "";
+
+					const tdWeight = document.createElement("td");
+					tdWeight.textContent = item?.weight != null ? String(item.weight) : "";
+
+					const tdUnit = document.createElement("td");
+					tdUnit.textContent = item?.unit ?? "";
+
+					tr.appendChild(tdName);
+					tr.appendChild(tdWeight);
+					tr.appendChild(tdUnit);
+					orderedTableBody.appendChild(tr);
+				});
+			}
+
+			function loadDraft() {
+				const raw = sessionStorage.getItem("medicineapp.orderDraft");
+				if (!raw) {
+					missingDraft.style.display = "block";
+					renderTable([]);
+					confirmBtn.disabled = true;
+					return;
+				}
+
+				try {
+					draftCache = JSON.parse(raw);
+					dateInput.value = draftCache?.date ?? "";
+					doctorNameInput.value = draftCache?.doctorName ?? "";
+					patientNameInput.value = draftCache?.patientName ?? "";
+					hnInput.value = draftCache?.hn ?? "";
+					renderTable(draftCache?.orderedMedicines ?? []);
+					confirmBtn.disabled = false;
+				} catch {
+					missingDraft.style.display = "block";
+					renderTable([]);
+					confirmBtn.disabled = true;
+				}
+			}
+
+			function loadConfirmedOrders() {
+				const raw = localStorage.getItem("medicineapp.confirmedOrders");
+				if (!raw) return [];
+				try {
+					const parsed = JSON.parse(raw);
+					return Array.isArray(parsed) ? parsed : [];
+				} catch {
+					return [];
+				}
+			}
+
+			function saveConfirmedOrders(orders) {
+				localStorage.setItem("medicineapp.confirmedOrders", JSON.stringify(orders));
+			}
+
+			function confirmDraft() {
+				if (!draftCache) return;
+				if (!methodBoil.checked && !methodSimmer.checked) {
+					alert("กรุณาเลือกวิธีต้มสมุนไพรอย่างน้อย 1 วิธี");
+					return;
+				}
+
+				const boilingMethods = [];
+				if (methodBoil.checked) boilingMethods.push("วิธีการต้มเดือด");
+				if (methodSimmer.checked) boilingMethods.push("วิธีการต้มเคี่ยว");
+
+				const confirmedOrders = loadConfirmedOrders();
+				const id = `ord_${Date.now()}`;
+				confirmedOrders.unshift({
+					id,
+					...draftCache,
+					boilingMethods,
+					confirmedAt: new Date().toISOString(),
+				});
+				saveConfirmedOrders(confirmedOrders);
+				sessionStorage.removeItem("medicineapp.orderDraft");
+				window.location.href = "historyMedicine.html";
+			}
+
+			confirmBtn.addEventListener("click", confirmDraft);
+			backBtn.addEventListener("click", () => {
+				window.location.href = "orderMedicine.html";
+			});
+
+			loadDraft();
+		</script>
+	</body>
+</html>

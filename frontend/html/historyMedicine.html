@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="th">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>ประวัติการสั่งยา</title>
+		<link rel="stylesheet" href="../css/styling.css" />
+		<style>
+			@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap");
+		</style>
+	</head>
+	<body>
+		<header class="headerBar">
+			<div class="innerHeaderBar">
+				<h1 class="innerHeaderTitle">โรงพยาบาลพุทธโสธร</h1>
+			</div>
+		</header>
+
+		<main class="pageContainer">
+			<section class="card">
+				<div class="cardHeader">
+					<h2 class="cardTitle">ประวัติการสั่งยา (ยืนยันแล้ว)</h2>
+					<a class="linkButton" href="global.html">กลับหน้าหลัก</a>
+				</div>
+
+				<p class="sectionHint">รายการด้านล่างมาจากการ “ยืนยันคำสั่งยา” ในหน้า “จัดยา”</p>
+
+				<div id="emptyHistory" class="sectionHint" style="display: none; margin-top: 14px">
+					ยังไม่มีประวัติการยืนยันคำสั่งยา
+				</div>
+
+				<div id="historyList" class="historyList" aria-label="รายการประวัติการสั่งยา"></div>
+			</section>
+		</main>
+
+		<script>
+			const historyList = document.getElementById("historyList");
+			const emptyHistory = document.getElementById("emptyHistory");
+
+			function loadConfirmedOrders() {
+				const raw = localStorage.getItem("medicineapp.confirmedOrders");
+				if (!raw) return [];
+				try {
+					const parsed = JSON.parse(raw);
+					return Array.isArray(parsed) ? parsed : [];
+				} catch {
+					return [];
+				}
+			}
+
+			function formatThaiDate(dateString) {
+				if (!dateString) return "-";
+				// If it's YYYY-MM-DD keep as-is; if ISO datetime, format.
+				if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+				try {
+					const d = new Date(dateString);
+					if (Number.isNaN(d.getTime())) return dateString;
+					return d.toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" });
+				} catch {
+					return dateString;
+				}
+			}
+
+			function render(orders) {
+				historyList.innerHTML = "";
+				if (!Array.isArray(orders) || orders.length === 0) {
+					emptyHistory.style.display = "block";
+					return;
+				}
+				emptyHistory.style.display = "none";
+
+				orders.forEach((order) => {
+					const details = document.createElement("details");
+					details.className = "historyItem";
+
+					const summary = document.createElement("summary");
+					summary.className = "historySummary";
+
+					const left = document.createElement("div");
+					left.className = "historySummaryLeft";
+
+					const line1 = document.createElement("div");
+					line1.className = "historyLine";
+					line1.textContent = `วันที่: ${order?.date ?? "-"}  |  HN: ${order?.hn ?? "-"}`;
+
+					const line2 = document.createElement("div");
+					line2.className = "historyLine";
+					line2.textContent = `ผู้ป่วย: ${order?.patientName ?? "-"}  |  แพทย์: ${order?.doctorName ?? "-"}`;
+
+					left.appendChild(line1);
+					left.appendChild(line2);
+
+					const right = document.createElement("div");
+					right.className = "historySummaryRight";
+					const method = Array.isArray(order?.boilingMethods) ? order.boilingMethods.join(" / ") : "-";
+					right.textContent = `วิธีต้ม: ${method}`;
+
+					summary.appendChild(left);
+					summary.appendChild(right);
+					details.appendChild(summary);
+
+					const meta = document.createElement("div");
+					meta.className = "historyMeta";
+					meta.textContent = `ยืนยันเมื่อ: ${formatThaiDate(order?.confirmedAt)}`;
+					details.appendChild(meta);
+
+					const meds = Array.isArray(order?.orderedMedicines) ? order.orderedMedicines : [];
+					const wrap = document.createElement("div");
+					wrap.className = "tableWrap";
+
+					const table = document.createElement("table");
+					table.className = "table";
+					table.setAttribute("aria-label", "รายการยาที่สั่ง");
+
+					const thead = document.createElement("thead");
+					const headRow = document.createElement("tr");
+					["ชื่อยา", "ขนาด", "หน่วย"].forEach((h) => {
+						const th = document.createElement("th");
+						th.textContent = h;
+						headRow.appendChild(th);
+					});
+					thead.appendChild(headRow);
+					table.appendChild(thead);
+
+					const tbody = document.createElement("tbody");
+					if (meds.length === 0) {
+						const tr = document.createElement("tr");
+						tr.className = "emptyRow";
+						const td = document.createElement("td");
+						td.colSpan = 3;
+						td.textContent = "ยังไม่มีรายการยา";
+						tr.appendChild(td);
+						tbody.appendChild(tr);
+					} else {
+						meds.forEach((m) => {
+							const tr = document.createElement("tr");
+							const tdName = document.createElement("td");
+							tdName.textContent = m?.name ?? "";
+							const tdWeight = document.createElement("td");
+							tdWeight.textContent = m?.weight != null ? String(m.weight) : "";
+							const tdUnit = document.createElement("td");
+							tdUnit.textContent = m?.unit ?? "";
+							tr.appendChild(tdName);
+							tr.appendChild(tdWeight);
+							tr.appendChild(tdUnit);
+							tbody.appendChild(tr);
+						});
+					}
+					table.appendChild(tbody);
+
+					wrap.appendChild(table);
+					details.appendChild(wrap);
+
+					historyList.appendChild(details);
+				});
+			}
+
+			render(loadConfirmedOrders());
+		</script>
+	</body>
+</html>

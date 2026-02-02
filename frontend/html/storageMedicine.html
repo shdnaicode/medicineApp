@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="th">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>คลังยา</title>
+		<link rel="stylesheet" href="../css/styling.css" />
+		<style>
+			@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap");
+		</style>
+	</head>
+	<body>
+		<header class="headerBar">
+			<div class="innerHeaderBar">
+				<h1 class="innerHeaderTitle">โรงพยาบาลพุทธโสธร</h1>
+			</div>
+		</header>
+
+		<main class="pageContainer">
+			<section class="card">
+				<div class="cardHeader">
+					<h2 class="cardTitle">คลังยาสมุนไพร</h2>
+					<a class="linkButton" href="global.html">กลับหน้าหลัก</a>
+				</div>
+
+				<div class="searchRow">
+					<label class="field" style="flex: 1">
+						<span class="label">ค้นหาสมุนไพร</span>
+						<input
+							class="input"
+							type="search"
+							id="searchInput"
+							placeholder="พิมพ์ชื่อสมุนไพร..."
+							autocomplete="off"
+						/>
+					</label>
+					<button class="secondaryButton" type="button" id="clearSearchBtn">ล้าง</button>
+				</div>
+
+				<div class="tableWrap">
+					<table class="table" aria-label="ผลการค้นหาสมุนไพร">
+						<thead>
+							<tr>
+								<th>ชื่อสมุนไพร</th>
+								<th>ส่วน</th>
+								<th>น้ำหนักก่อนอบ</th>
+							</tr>
+						</thead>
+						<tbody id="resultBody">
+							<tr class="emptyRow" id="emptyRow">
+								<td colspan="3">ไม่พบข้อมูล</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
+		</main>
+
+		<script>
+			const searchInput = document.getElementById("searchInput");
+			const clearSearchBtn = document.getElementById("clearSearchBtn");
+			const resultBody = document.getElementById("resultBody");
+			const emptyRow = document.getElementById("emptyRow");
+
+			/**
+			 * รายการคลังยาสมุนไพร
+			 * @type {{name: string, part: string, weightBeforeDry: number | null}[]}
+			 */
+			const HERB_STOCK = [
+				{ name: "กระทือ", part: "หัว", weightBeforeDry: 2482 },
+				{ name: "โกฐสอ", part: "หัว", weightBeforeDry: 895 },
+				{ name: "กำแพงเจ็ดชั้น", part: "เนื้อไม้", weightBeforeDry: 3355 },
+				{ name: "กวาวเครือขาว", part: "เถา", weightBeforeDry: 1897 },
+				{ name: "กะลำพัก", part: "แก่น", weightBeforeDry: 526 },
+				{ name: "กานพลู", part: "ดอก", weightBeforeDry: 500 },
+				{ name: "กุ่มบก", part: "เปลือก", weightBeforeDry: 2519 },
+				{ name: "กฤษณาขาว", part: "เนื้อไม้/เปลือก", weightBeforeDry: 2055 },
+				{ name: "โกฐจุฬาลัมพา", part: "ทั้งต้น", weightBeforeDry: 378 },
+				{ name: "กำลังเสือโคร่ง", part: "เปลือก", weightBeforeDry: 2001 },
+				{ name: "ขี้เหล็ก", part: "แก่น", weightBeforeDry: 4456 },
+				{ name: "ขอนดอก", part: "แก่น", weightBeforeDry: 1256 },
+				{ name: "ข้าวเย็นเหนือ", part: "หัว", weightBeforeDry: 5016 },
+				{ name: "ข้าวเย็นใต้", part: "หัว", weightBeforeDry: 2433 },
+				{ name: "ขันทองพยาบาท", part: "เนื้อไม้", weightBeforeDry: 3602 },
+				{ name: "ขมิ้นอ้อย", part: "เหง้า", weightBeforeDry: 2242 },
+				{ name: "ข่า", part: "เหง้า", weightBeforeDry: 1354 },
+				{ name: "โคคลาน", part: "เถา", weightBeforeDry: 3087 },
+				{ name: "คนทา", part: "ราก", weightBeforeDry: 4906 },
+				{ name: "แจง", part: "ราก", weightBeforeDry: 3696 },
+				{ name: "จันทร์เทศ", part: "ดอก", weightBeforeDry: 1235 },
+				{ name: "จันทร์ขาว", part: "แก่น", weightBeforeDry: 1405 },
+				{ name: "จันทร์แดง", part: "แก่น", weightBeforeDry: 1644 },
+				{ name: "ชิงชี่", part: "ราก", weightBeforeDry: 5333 },
+				{ name: "เต้ารัง", part: "เปลือก", weightBeforeDry: 761 },
+				{ name: "ตะโกนา", part: "เปลือก", weightBeforeDry: 2157 },
+				{ name: "เถาเอ็นอ่อน", part: "เถา", weightBeforeDry: 3058 },
+				{ name: "เถาคันแดง", part: "เถา", weightBeforeDry: 2698 },
+				{ name: "เถาวัลย์เปรียงขาว", part: "เถา", weightBeforeDry: 3345 },
+				{ name: "เทพทาโร", part: "แก่น", weightBeforeDry: 2472 },
+				{ name: "ท้าวยายม่อม", part: "ราก", weightBeforeDry: 3795 },
+				{ name: "ทองหลาง", part: "เปลือก", weightBeforeDry: 2041 },
+				{ name: "ปลาไหลเผือก", part: "ราก", weightBeforeDry: 3251 },
+				{ name: "ประดู่", part: "แก่น", weightBeforeDry: 3535 },
+				{ name: "ฝาง", part: "แก่น", weightBeforeDry: 4551 },
+				{ name: "ไพล", part: "เหง้า", weightBeforeDry: 2017 },
+				{ name: "พญายา", part: "แก่น", weightBeforeDry: 3982 },
+				{ name: "มะเดื่อชุมพร", part: "ราก", weightBeforeDry: 4576 },
+				{ name: "มะดูก", part: "ราก", weightBeforeDry: 661 },
+				{ name: "มะกา", part: "ใบ", weightBeforeDry: null },
+				{ name: "มะนาว", part: "ราก", weightBeforeDry: 4290 },
+				{ name: "ไม้สักหิน", part: "เนื้อไม้", weightBeforeDry: 2010 },
+				{ name: "มะปราง", part: "ราก", weightBeforeDry: 2523 },
+				{ name: "รางแดง", part: "เนื้อไม้", weightBeforeDry: 4800 },
+				{ name: "ว่านชักมดลูก", part: "เหง้า", weightBeforeDry: 2116 },
+				{ name: "ว่านน้ำไทย", part: "ราก", weightBeforeDry: 1959 },
+				{ name: "สะค้านพริก", part: "ต้น", weightBeforeDry: 2114 },
+				{ name: "สะเดา", part: "ต้น", weightBeforeDry: 2731 },
+				{ name: "สามสิบ", part: "ราก", weightBeforeDry: 2905 },
+				{ name: "แสมสาร", part: "แก่น", weightBeforeDry: 2063 },
+				{ name: "แสมทะเล", part: "เปลือก/แก่น", weightBeforeDry: 2469 },
+				{ name: "สีเสียดเทศ", part: "หัว", weightBeforeDry: 1056 },
+				{ name: "สักหิน", part: "แก่น", weightBeforeDry: 2070 },
+				{ name: "หัวร้อยรู", part: "ลำต้น", weightBeforeDry: 3887 },
+				{ name: "เหมือดคน", part: "ราก", weightBeforeDry: 2844 },
+				{ name: "ย่านาง", part: "ราก", weightBeforeDry: 5700 },
+				{ name: "กระวาน", part: "ใบ", weightBeforeDry: 1982 },
+				{ name: "กานพลู", part: "ดอก", weightBeforeDry: 954 },
+				{ name: "กระเจี๊ยบ", part: "ดอก", weightBeforeDry: 2129 },
+				{ name: "โกฐหัวบัว", part: "หัว", weightBeforeDry: 1648 },
+				{ name: "เกสรบัวหลวง", part: "เกสร", weightBeforeDry: 1197 },
+				{ name: "กะเม็ง", part: "", weightBeforeDry: 1981 },
+				{ name: "โกฐเชียง", part: "ราก", weightBeforeDry: 181 },
+				{ name: "โกฐจุฬาลัมพา", part: "ทั้งต้น", weightBeforeDry: 2044 },
+				{ name: "ขี้เหล็ก", part: "ใบ", weightBeforeDry: 1845 },
+				{ name: "ขลู่", part: "ใบ", weightBeforeDry: 2489 },
+				{ name: "คำฝอย", part: "ดอก", weightBeforeDry: 2614 },
+				{ name: "คำไทย", part: "ดอก", weightBeforeDry: 1496 },
+				{ name: "คูน", part: "ฝัก", weightBeforeDry: 1358 },
+				{ name: "คัดเค้า", part: "ลูก", weightBeforeDry: 2005 },
+				{ name: "เจตมูลเพลิงแดง", part: "ราก", weightBeforeDry: 3897 },
+				{ name: "จันทร์ดอก", part: "ดอก", weightBeforeDry: 1001 },
+				{ name: "ชุมเห็ดเทศ", part: "เมล็ด", weightBeforeDry: 3010 },
+				{ name: "ชะลูด", part: "เปลือก", weightBeforeDry: 2462 },
+				{ name: "ดีปลี", part: "ดอก", weightBeforeDry: 724 },
+				{ name: "ตองแตก", part: "ราก", weightBeforeDry: 1987 },
+				{ name: "บุญนาค", part: "ดอก", weightBeforeDry: 1058 },
+				{ name: "ผักชี", part: "เมล็ด", weightBeforeDry: 1182 },
+				{ name: "ผักชีล้อม", part: "เมล็ด", weightBeforeDry: 1016 },
+				{ name: "ผักเสี้ยนผี", part: "ทั้งต้น", weightBeforeDry: 2254 },
+				{ name: "แฝกหอม", part: "ราก", weightBeforeDry: 1275 },
+				{ name: "พิมเสนต้น", part: "ใบ", weightBeforeDry: 80 },
+				{ name: "มะตูม", part: "ผล", weightBeforeDry: 2856 },
+				{ name: "มะกรูด", part: "ผิว", weightBeforeDry: 1739 },
+				{ name: "มะคำไก่", part: "ใบ", weightBeforeDry: 1093 },
+				{ name: "มะกา", part: "ใบ", weightBeforeDry: 226 },
+				{ name: "มะลิ", part: "ดอก", weightBeforeDry: 853 },
+				{ name: "ไมยราพ", part: "ต้น", weightBeforeDry: 2760 },
+				{ name: "มะขามป้อม", part: "ลูก", weightBeforeDry: 3475 },
+				{ name: "มะขามแขก", part: "ใบ", weightBeforeDry: 1962 },
+				{ name: "สมอพิเภก", part: "ลูก", weightBeforeDry: 1008 },
+				{ name: "สมอไทย", part: "ลูก", weightBeforeDry: 1986 },
+				{ name: "สมอเทศ", part: "ลูก", weightBeforeDry: 1462 },
+				{ name: "สารภี", part: "ดอก", weightBeforeDry: 317 },
+				{ name: "ส้มแขก", part: "ผล", weightBeforeDry: 1734 },
+				{ name: "สะเดา", part: "ต้น", weightBeforeDry: 2704 },
+				{ name: "ส้มป่อย", part: "ใบ", weightBeforeDry: 1431 },
+				{ name: "หญ้าคา", part: "ราก", weightBeforeDry: 3019 },
+				{ name: "หญ้าหนวดแมว", part: "ทั้งต้น", weightBeforeDry: 2408 },
+				{ name: "หญ้าดอกขาว", part: "ใบ", weightBeforeDry: 1617 },
+				{ name: "หญ้าใต้ใบ", part: "ใบ", weightBeforeDry: 1041 },
+				{ name: "หนุมานประสานกาย", part: "ใบ", weightBeforeDry: 292 },
+				{ name: "เหงือกปลาหมอ", part: "ใบ", weightBeforeDry: 2600 },
+			];
+
+			function normalize(text) {
+				return String(text ?? "").trim().toLowerCase();
+			}
+
+			function formatWeight(value) {
+				if (value == null) return "-";
+				const n = Number(value);
+				if (!Number.isFinite(n)) return "-";
+				return n.toLocaleString("th-TH");
+			}
+
+			function render(rows) {
+				resultBody.querySelectorAll("tr[data-row]").forEach((r) => r.remove());
+
+				if (!Array.isArray(rows) || rows.length === 0) {
+					emptyRow.style.display = "table-row";
+					return;
+				}
+				emptyRow.style.display = "none";
+
+				rows.forEach((row, idx) => {
+					const tr = document.createElement("tr");
+					tr.dataset.row = String(idx);
+
+					const tdName = document.createElement("td");
+					tdName.textContent = row.name;
+
+					const tdPart = document.createElement("td");
+					tdPart.textContent = row.part || "-";
+
+					const tdWeight = document.createElement("td");
+					tdWeight.textContent = formatWeight(row.weightBeforeDry);
+
+					tr.appendChild(tdName);
+					tr.appendChild(tdPart);
+					tr.appendChild(tdWeight);
+					resultBody.appendChild(tr);
+				});
+			}
+
+			const allRows = HERB_STOCK;
+
+			function applySearch() {
+				const q = normalize(searchInput.value);
+				if (!q) {
+					render(allRows);
+					return;
+				}
+				const filtered = allRows.filter(
+					(r) => normalize(r.name).includes(q) || normalize(r.part).includes(q),
+				);
+				render(filtered);
+			}
+
+			searchInput.addEventListener("input", applySearch);
+			clearSearchBtn.addEventListener("click", () => {
+				searchInput.value = "";
+				applySearch();
+				searchInput.focus();
+			});
+
+			render(allRows);
+		</script>
+	</body>
+</html>

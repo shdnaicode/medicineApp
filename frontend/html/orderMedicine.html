@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="th">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>สั่งยา</title>
+		<link rel="stylesheet" href="../css/styling.css" />
+		<style>
+			@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap");
+		</style>
+	</head>
+	<body>
+		<header class="headerBar">
+			<div class="innerHeaderBar">
+				<h1 class="innerHeaderTitle">โรงพยาบาลพุทธโสธร</h1>
+			</div>
+		</header>
+
+		<main class="pageContainer">
+			<section class="card">
+				<div class="cardHeader">
+					<h2 class="cardTitle">สั่งยา</h2>
+					<a class="linkButton" href="global.html">กลับหน้าหลัก</a>
+				</div>
+
+				<form id="orderForm" class="form" autocomplete="on">
+					<div class="formGrid">
+						<label class="field">
+							<span class="label">วันที่</span>
+							<input class="input" type="date" name="date" id="date" required />
+						</label>
+
+						<label class="field">
+							<span class="label">ชื่อแพทย์</span>
+							<input
+								class="input"
+								type="text"
+								name="doctorName"
+								id="doctorName"
+								placeholder="พท.ป. ..."
+								required
+							/>
+						</label>
+
+						<label class="field">
+							<span class="label">ชื่อผู้ป่วย</span>
+							<input
+								class="input"
+								type="text"
+								name="patientName"
+								id="patientName"
+								placeholder="ชื่อผู้ป่วย ..."
+								required
+							/>
+						</label>
+
+						<label class="field">
+							<span class="label">เลข HN</span>
+							<input
+								class="input"
+								type="text"
+								name="hn"
+								id="hn"
+								inputmode="numeric"
+								placeholder="กรอกเลข HN"
+								required
+							/>
+						</label>
+					</div>
+
+					<div class="divider"></div>
+
+					<div class="sectionTitleRow">
+						<h3 class="sectionTitle">รายการยา</h3>
+						<p class="sectionHint">ค้นหาชื่อยา + กรอกขนาดยา แล้วกดเพิ่มเข้ารายการ</p>
+					</div>
+
+					<div class="medicineEntry">
+						<label class="field">
+							<span class="label">ค้นหาชื่อยา</span>
+							<input
+								class="input"
+								type="search"
+								id="medicineName"
+								name="medicineName"
+								list="medicineSuggestions"
+								placeholder="เช่น Paracetamol"
+							/>
+							<datalist id="medicineSuggestions">
+								<option value="Paracetamol"></option>
+								<option value="Amoxicillin"></option>
+								<option value="Ibuprofen"></option>
+								<option value="Cetirizine"></option>
+							</datalist>
+						</label>
+
+						<label class="field">
+							<span class="label">ขนาดยา</span>
+							<div class="inlineControls">
+								<input
+									class="input"
+									type="number"
+									id="medicineWeight"
+									name="medicineWeight"
+									min="0"
+									step="0.01"
+									placeholder="กรอกตัวเลข"
+								/>
+								<select class="select" id="medicineUnit" name="medicineUnit">
+									<option value="mg">มก. (mg)</option>
+									<option value="g">กรัม (g)</option>
+									<option value="ml">มล. (ml)</option>
+									<option value="tab">เม็ด (tab)</option>
+									<option value="caps">แคปซูล (caps)</option>
+								</select>
+							</div>
+						</label>
+
+						<button class="primaryButton" type="button" id="addMedicineBtn">เพิ่ม</button>
+					</div>
+
+					<input type="hidden" name="orderedMedicines" id="orderedMedicines" value="[]" />
+
+					<div class="orderedList">
+						<h3 class="sectionTitle">รายการยาที่สั่ง</h3>
+						<div class="tableWrap">
+							<table class="table" aria-label="รายการยาที่สั่ง">
+								<thead>
+									<tr>
+										<th>ชื่อยา</th>
+										<th>ขนาด</th>
+										<th>หน่วย</th>
+										<th>จัดการ</th>
+									</tr>
+								</thead>
+								<tbody id="orderedTableBody">
+									<tr class="emptyRow" id="emptyRow">
+										<td colspan="4">ยังไม่มีรายการยา</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<div class="formActions">
+						<button class="secondaryButton" type="reset" id="resetBtn">ล้างข้อมูล</button>
+						<button class="primaryButton" type="submit">บันทึกคำสั่งยา</button>
+					</div>
+				</form>
+			</section>
+		</main>
+
+		<script>
+			const dateInput = document.getElementById("date");
+			const medicineNameInput = document.getElementById("medicineName");
+			const medicineWeightInput = document.getElementById("medicineWeight");
+			const medicineUnitSelect = document.getElementById("medicineUnit");
+			const addMedicineBtn = document.getElementById("addMedicineBtn");
+			const orderedMedicinesInput = document.getElementById("orderedMedicines");
+			const orderedTableBody = document.getElementById("orderedTableBody");
+			const emptyRow = document.getElementById("emptyRow");
+			const orderForm = document.getElementById("orderForm");
+			const resetBtn = document.getElementById("resetBtn");
+
+			/** @type {{name: string, weight: number, unit: string}[]} */
+			let ordered = [];
+
+			function setTodayIfEmpty() {
+				if (!dateInput.value) {
+					const today = new Date();
+					const yyyy = String(today.getFullYear());
+					const mm = String(today.getMonth() + 1).padStart(2, "0");
+					const dd = String(today.getDate()).padStart(2, "0");
+					dateInput.value = `${yyyy}-${mm}-${dd}`;
+				}
+			}
+
+			function syncHiddenField() {
+				orderedMedicinesInput.value = JSON.stringify(ordered);
+			}
+
+			function renderTable() {
+				// Clear all rows except the empty row
+				orderedTableBody.querySelectorAll("tr[data-index]").forEach((row) => row.remove());
+
+				if (ordered.length === 0) {
+					emptyRow.style.display = "table-row";
+					syncHiddenField();
+					return;
+				}
+
+				emptyRow.style.display = "none";
+				ordered.forEach((item, index) => {
+					const tr = document.createElement("tr");
+					tr.dataset.index = String(index);
+
+					const tdName = document.createElement("td");
+					tdName.textContent = item.name;
+
+					const tdWeight = document.createElement("td");
+					tdWeight.textContent = String(item.weight);
+
+					const tdUnit = document.createElement("td");
+					tdUnit.textContent = item.unit;
+
+					const tdAction = document.createElement("td");
+					tdAction.className = "tableAction";
+					const removeBtn = document.createElement("button");
+					removeBtn.type = "button";
+					removeBtn.className = "dangerButton";
+					removeBtn.textContent = "ลบ";
+					removeBtn.addEventListener("click", () => {
+						ordered.splice(index, 1);
+						renderTable();
+					});
+					tdAction.appendChild(removeBtn);
+
+					tr.appendChild(tdName);
+					tr.appendChild(tdWeight);
+					tr.appendChild(tdUnit);
+					tr.appendChild(tdAction);
+					orderedTableBody.appendChild(tr);
+				});
+
+				syncHiddenField();
+			}
+
+			function addMedicine() {
+				const name = medicineNameInput.value.trim();
+				const weightRaw = medicineWeightInput.value;
+				const unit =
+					medicineUnitSelect.options[medicineUnitSelect.selectedIndex]?.textContent ||
+					medicineUnitSelect.value;
+
+				if (!name) {
+					medicineNameInput.focus();
+					return;
+				}
+
+				const weight = Number(weightRaw);
+				if (!Number.isFinite(weight) || weight <= 0) {
+					medicineWeightInput.focus();
+					return;
+				}
+
+				ordered.push({ name, weight, unit });
+				renderTable();
+
+				medicineNameInput.value = "";
+				medicineWeightInput.value = "";
+				medicineNameInput.focus();
+			}
+
+			addMedicineBtn.addEventListener("click", addMedicine);
+			medicineWeightInput.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					e.preventDefault();
+					addMedicine();
+				}
+			});
+			medicineNameInput.addEventListener("keydown", (e) => {
+				if (e.key === "Enter") {
+					e.preventDefault();
+					medicineWeightInput.focus();
+				}
+			});
+
+			resetBtn.addEventListener("click", () => {
+				ordered = [];
+				renderTable();
+				setTodayIfEmpty();
+			});
+
+			orderForm.addEventListener("submit", (e) => {
+				e.preventDefault();
+				syncHiddenField();
+
+				if (ordered.length === 0) {
+					medicineNameInput.focus();
+					return;
+				}
+
+				const payload = {
+					date: dateInput.value,
+					doctorName: document.getElementById("doctorName").value.trim(),
+					patientName: document.getElementById("patientName").value.trim(),
+					hn: document.getElementById("hn").value.trim(),
+					orderedMedicines: ordered,
+				};
+
+				sessionStorage.setItem("medicineapp.orderDraft", JSON.stringify(payload));
+				window.location.href = "organizeMedicine.html";
+			});
+
+			setTodayIfEmpty();
+			renderTable();
+		</script>
+	</body>
+</html>

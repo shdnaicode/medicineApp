@@ -1,0 +1,526 @@
+:root {
+  --brand-green: #354024;
+  --brand-green-10: rgba(53, 64, 36, 0.1);
+  --brand-green-20: rgba(53, 64, 36, 0.2);
+  --brand-green-25: rgba(53, 64, 36, 0.25);
+  --brand-green-35: rgba(53, 64, 36, 0.35);
+  --brand-green-55: rgba(53, 64, 36, 0.55);
+  --header-height: clamp(56px, 8vh, 84px);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Noto Sans Thai", sans-serif;
+  background: #E5D7C4;
+  color: #413d3d;
+}
+
+.headerBar {
+  width: 100%;
+  height: var(--header-height);
+  background-color: var(--brand-green);
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+.innerHeaderTitle {
+  color: #ffffff;
+}
+
+/* Shared page layout */
+.pageContainer {
+  min-height: calc(100vh - var(--header-height));
+  display: flex;
+  justify-content: center;
+  padding: 28px 18px;
+}
+
+.card {
+  width: min(1100px, 100%);
+  background: #ffffff;
+  border: 1px solid rgba(65, 61, 61, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  padding: 18px;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: 0.2px;
+}
+
+.divider {
+  height: 1px;
+  background: rgba(65, 61, 61, 0.12);
+  margin: 18px 0;
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.sectionHint {
+  margin: 0;
+  color: rgba(65, 61, 61, 0.75);
+  font-size: 14px;
+}
+
+/* Form controls */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.input,
+.select {
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(65, 61, 61, 0.22);
+  padding: 0 12px;
+  font-size: 16px;
+  background: #ffffff;
+  color: #2f2c2c;
+}
+
+.input:focus,
+.select:focus {
+  outline: 4px solid var(--brand-green-20);
+  border-color: var(--brand-green-55);
+}
+
+.inlineControls {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 10px;
+}
+
+.medicineEntry {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+/* Buttons */
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.linkButton {
+  border-radius: 12px;
+  height: 44px;
+  padding: 0 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.primaryButton {
+  background: var(--brand-green);
+  color: #ffffff;
+  box-shadow: 0 8px 18px var(--brand-green-25);
+}
+
+.primaryButton:hover {
+  filter: brightness(0.98);
+}
+
+.secondaryButton {
+  background: #ffffff;
+  color: #2f2c2c;
+  border-color: rgba(65, 61, 61, 0.22);
+}
+
+.dangerButton {
+  background: #ffffff;
+  color: #a22323;
+  border-color: rgba(162, 35, 35, 0.35);
+}
+
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  background: #ffffff;
+  color: #2f2c2c;
+  border-color: rgba(65, 61, 61, 0.22);
+}
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.dangerButton:focus-visible,
+.linkButton:focus-visible {
+  outline: 4px solid var(--brand-green-35);
+  outline-offset: 3px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.searchRow {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  margin: 12px 0 14px;
+  flex-wrap: wrap;
+}
+
+/* Table */
+.tableWrap {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(65, 61, 61, 0.12);
+  border-radius: 14px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.table th,
+.table td {
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(65, 61, 61, 0.12);
+  text-align: left;
+}
+
+.table th {
+  background: var(--brand-green-10);
+  font-size: 14px;
+}
+
+.tableAction {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.emptyRow td {
+  color: rgba(65, 61, 61, 0.7);
+}
+
+/* Checkbox list (organizeMedicine boiling methods) */
+.checkboxList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.checkboxItem {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(65, 61, 61, 0.12);
+  background: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+}
+
+.checkboxInput {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--brand-green);
+}
+
+.checkboxText {
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(65, 61, 61, 0.95);
+}
+
+/* Medicine history */
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.historyItem {
+  border: 1px solid rgba(65, 61, 61, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.65);
+  overflow: hidden;
+}
+
+.historySummary {
+  cursor: pointer;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.historySummary::-webkit-details-marker {
+  display: none;
+}
+
+.historyLine {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.historySummaryRight {
+  font-size: 14px;
+  color: rgba(65, 61, 61, 0.85);
+}
+
+.historyMeta {
+  padding: 0 12px 12px;
+  font-size: 13px;
+  color: rgba(65, 61, 61, 0.7);
+}
+
+.historyItem .tableWrap {
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-radius: 0;
+}
+
+@media (min-width: 900px) {
+  .historySummary {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+}
+
+/* Landing page (global.html) menu */
+.menuSelector {
+  min-height: calc(100vh - var(--header-height));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+@supports (height: 100dvh) {
+  .pageContainer {
+    min-height: calc(100dvh - var(--header-height));
+  }
+
+  .menuSelector {
+    min-height: calc(100dvh - var(--header-height));
+  }
+}
+
+/* Tablet (iPad) refinements */
+@media (max-width: 1024px) {
+  .pageContainer {
+    padding: 24px 16px;
+  }
+
+  .card {
+    border-radius: 16px;
+  }
+
+  .cardTitle {
+    font-size: 24px;
+  }
+
+  .menuSelection {
+    gap: 14px;
+  }
+
+  .menuButton {
+    min-height: 128px;
+    font-size: 26px;
+  }
+}
+
+.menuSelection {
+  width: min(1000px, 100%);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.menuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+
+  min-height: 140px;
+  padding: 22px 18px;
+  border-radius: 18px;
+  border: 2px solid rgba(65, 61, 61, 0.12);
+
+  background: #ffffff;
+  color: #2f2c2c;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.menuButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.12);
+  border-color: rgba(65, 61, 61, 0.2);
+}
+
+.menuButton:active {
+  transform: translateY(0);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.menuButton:focus-visible {
+  outline: 4px solid var(--brand-green-35);
+  outline-offset: 4px;
+}
+
+/* Optional: subtle differentiation per button */
+.menuButton.orderMedicine {
+  background: #889063;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.menuButton.organizeMedicine {
+  background: #889063;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.menuButton.historyMedicine {
+  background: #D8C3A4;
+  color: #4C3D19;
+  border-color: rgba(76, 61, 25, 0.35);
+}
+
+.menuButton.storageMedicine {
+  background: #D8C3A4;
+  color: #4C3D19;
+  border-color: rgba(76, 61, 25, 0.35);
+}
+
+@media (max-width: 700px) {
+  .pageContainer {
+    padding: 18px 12px;
+  }
+
+  .card {
+    padding: 14px;
+  }
+
+  .cardTitle {
+    font-size: 22px;
+  }
+
+  .menuSelection {
+    grid-template-columns: 1fr;
+  }
+
+  .menuButton {
+    min-height: 110px;
+    font-size: 24px;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .medicineEntry {
+    grid-template-columns: 1fr;
+  }
+
+  .inlineControls {
+    grid-template-columns: 1fr 110px;
+  }
+
+  .formActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .formActions > * {
+    width: 100%;
+  }
+
+  .searchRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchRow > * {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .table {
+    min-width: 0;
+  }
+
+  .table th,
+  .table td {
+    padding: 10px 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .menuSelector {
+    padding: 18px 14px;
+  }
+
+  .menuButton {
+    min-height: 96px;
+    font-size: 22px;
+  }
+}
