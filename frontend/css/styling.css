@@ -333,7 +333,7 @@ body {
   }
 }
 
-/* Landing page (global.html) menu */
+/* Landing page (index.html) menu */
 .menuSelector {
   min-height: calc(100vh - var(--header-height));
   display: flex;
