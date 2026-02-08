@@ -84,14 +84,14 @@
 								id="medicineName"
 								name="medicineName"
 								list="medicineSuggestions"
-								placeholder="เช่น Paracetamol"
+								placeholder="พิมพ์ชื่อสมุนไพรจากคลังยา..."
 							/>
 							<datalist id="medicineSuggestions">
-								<option value="Paracetamol"></option>
-								<option value="Amoxicillin"></option>
-								<option value="Ibuprofen"></option>
-								<option value="Cetirizine"></option>
+								<!-- populated from herb stock -->
 							</datalist>
+							<div id="medicineNameError" class="fieldError" style="display: none">
+								สามารถเลือกได้เฉพาะสมุนไพรที่มีอยู่ในหน้า “คลังยา” เท่านั้น
+							</div>
 						</label>
 
 						<label class="field">
@@ -142,6 +142,32 @@
 						</div>
 					</div>
 
+					<div class="divider"></div>
+
+					<div class="sectionTitleRow">
+						<h3 class="sectionTitle">วิธีต้มสมุนไพร</h3>
+						<p class="sectionHint">เลือกอย่างน้อย 1 วิธี</p>
+					</div>
+
+					<div class="checkboxList" role="group" aria-label="วิธีต้มสมุนไพร">
+						<label class="checkboxItem">
+							<input class="checkboxInput" type="checkbox" id="methodBoil" />
+							<span class="checkboxText">
+								<strong>วิธีการต้มเดือด</strong> : นำสมุนไพรใส่หม้อ ใส่น้ำ ท่วมตัวยาสมุนไพร จากนั้นต้มจนเดือดแล้วจับเวลา15นาที กรองยาเอาแค่น้ำ อุ่นยาทุกวันก่อนรับประทาน กินติดต่อกัน7วัน
+							</span>
+						</label>
+
+						<label class="checkboxItem">
+							<input class="checkboxInput" type="checkbox" id="methodSimmer" />
+							<span class="checkboxText">
+								<strong>วิธีการต้มเคี่ยว</strong> : ต้ม3ส่วนเอา1ส่วน ใส่น้ำ4เท่าของน้ำหนักยา(หรือประมาณ1.5ลิตร) จากนั้นต้มจนยาเหลือ1ใน3ของหม้อ แล้วทำซ้ำ3รอบ
+							</span>
+						</label>
+					</div>
+					<div id="boilingMethodError" class="fieldError" style="display: none">
+						กรุณาเลือกวิธีต้มสมุนไพรอย่างน้อย 1 วิธี
+					</div>
+
 					<div class="formActions">
 						<button class="secondaryButton" type="reset" id="resetBtn">ล้างข้อมูล</button>
 						<button class="primaryButton" type="submit">บันทึกคำสั่งยา</button>
@@ -150,9 +176,16 @@
 			</section>
 		</main>
 
+		<script src="herbStockSeed.js"></script>
+		<script src="appData.js"></script>
 		<script>
 			const dateInput = document.getElementById("date");
 			const medicineNameInput = document.getElementById("medicineName");
+			const medicineSuggestions = document.getElementById("medicineSuggestions");
+			const medicineNameError = document.getElementById("medicineNameError");
+			const methodBoil = document.getElementById("methodBoil");
+			const methodSimmer = document.getElementById("methodSimmer");
+			const boilingMethodError = document.getElementById("boilingMethodError");
 			const medicineWeightInput = document.getElementById("medicineWeight");
 			const medicineUnitSelect = document.getElementById("medicineUnit");
 			const addMedicineBtn = document.getElementById("addMedicineBtn");
@@ -164,6 +197,51 @@
 
 			/** @type {{name: string, weight: number, unit: string}[]} */
 			let ordered = [];
+
+			const seed = Array.isArray(window.MEDICINEAPP_HERB_STOCK_SEED)
+				? window.MEDICINEAPP_HERB_STOCK_SEED
+				: [];
+			window.MedicineAppData?.ensureHerbStockSeed(seed);
+
+			function normalize(text) {
+				return window.MedicineAppData?.normalize(text) ?? String(text ?? "").trim().toLowerCase();
+			}
+
+			function loadHerbNames() {
+				const rows = window.MedicineAppData?.loadHerbStock() ?? [];
+				return rows
+					.map((r) => String(r?.name ?? "").trim())
+					.filter(Boolean)
+					.filter((name, idx, arr) => arr.findIndex((n) => normalize(n) === normalize(name)) === idx);
+			}
+
+			function renderHerbSuggestions() {
+				medicineSuggestions.innerHTML = "";
+				loadHerbNames().forEach((name) => {
+					const option = document.createElement("option");
+					option.value = name;
+					medicineSuggestions.appendChild(option);
+				});
+			}
+
+			function isNameInStock(name) {
+				const n = normalize(name);
+				if (!n) return false;
+				const rows = window.MedicineAppData?.loadHerbStock() ?? [];
+				return rows.some((r) => normalize(r?.name) === n);
+			}
+
+			function updateNameValidityUI() {
+				const name = medicineNameInput.value.trim();
+				if (!name) {
+					medicineNameError.style.display = "none";
+					addMedicineBtn.disabled = false;
+					return;
+				}
+				const ok = isNameInStock(name);
+				medicineNameError.style.display = ok ? "none" : "block";
+				addMedicineBtn.disabled = !ok;
+			}
 
 			function setTodayIfEmpty() {
 				if (!dateInput.value) {
@@ -237,6 +315,12 @@
 					return;
 				}
 
+				if (!isNameInStock(name)) {
+					medicineNameError.style.display = "block";
+					medicineNameInput.focus();
+					return;
+				}
+
 				const weight = Number(weightRaw);
 				if (!Number.isFinite(weight) || weight <= 0) {
 					medicineWeightInput.focus();
@@ -249,9 +333,16 @@
 				medicineNameInput.value = "";
 				medicineWeightInput.value = "";
 				medicineNameInput.focus();
+				updateNameValidityUI();
 			}
 
 			addMedicineBtn.addEventListener("click", addMedicine);
+			medicineNameInput.addEventListener("input", updateNameValidityUI);
+			window.addEventListener("focus", () => {
+				// Refresh suggestions in case stock was edited in another tab
+				renderHerbSuggestions();
+				updateNameValidityUI();
+			});
 			medicineWeightInput.addEventListener("keydown", (e) => {
 				if (e.key === "Enter") {
 					e.preventDefault();
@@ -269,6 +360,9 @@
 				ordered = [];
 				renderTable();
 				setTodayIfEmpty();
+				methodBoil.checked = false;
+				methodSimmer.checked = false;
+				boilingMethodError.style.display = "none";
 			});
 
 			orderForm.addEventListener("submit", (e) => {
@@ -280,12 +374,24 @@
 					return;
 				}
 
+				if (!methodBoil.checked && !methodSimmer.checked) {
+					boilingMethodError.style.display = "block";
+					methodBoil.focus();
+					return;
+				}
+				boilingMethodError.style.display = "none";
+
+				const boilingMethods = [];
+				if (methodBoil.checked) boilingMethods.push("วิธีการต้มเดือด");
+				if (methodSimmer.checked) boilingMethods.push("วิธีการต้มเคี่ยว");
+
 				const payload = {
 					date: dateInput.value,
 					doctorName: document.getElementById("doctorName").value.trim(),
 					patientName: document.getElementById("patientName").value.trim(),
 					hn: document.getElementById("hn").value.trim(),
 					orderedMedicines: ordered,
+					boilingMethods,
 				};
 
 				sessionStorage.setItem("medicineapp.orderDraft", JSON.stringify(payload));
@@ -293,6 +399,8 @@
 			});
 
 			setTodayIfEmpty();
+			renderHerbSuggestions();
+			updateNameValidityUI();
 			renderTable();
 		</script>
 	</body>

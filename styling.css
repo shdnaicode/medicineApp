@@ -140,6 +140,20 @@ body {
   align-items: end;
 }
 
+.stockEntry {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+  margin: 10px 0 2px;
+}
+
+.fieldError {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #a22323;
+}
+
 /* Buttons */
 .primaryButton,
 .secondaryButton,
@@ -238,6 +252,13 @@ body {
 .tableAction {
   text-align: right;
   white-space: nowrap;
+}
+
+.tableInput {
+  height: 36px;
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 14px;
 }
 
 .emptyRow td {

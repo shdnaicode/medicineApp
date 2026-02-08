@@ -25,6 +25,25 @@
 
 				<p class="sectionHint">รายการด้านล่างมาจากการ “ยืนยันคำสั่งยา” ในหน้า “จัดยา”</p>
 
+				<div class="searchRow" aria-label="ค้นหาประวัติยา">
+					<label class="field" style="min-width: 220px">
+						<span class="label">ค้นหาจากวันที่</span>
+						<input class="input" type="date" id="filterDate" />
+					</label>
+					<label class="field" style="flex: 1; min-width: 260px">
+						<span class="label">ค้นหาจากชื่อแพทย์</span>
+						<input
+							class="input"
+							type="search"
+							id="filterDoctor"
+							placeholder="พิมพ์ชื่อแพทย์..."
+							autocomplete="off"
+						/>
+					</label>
+					<button class="secondaryButton" type="button" id="clearFiltersBtn">ล้าง</button>
+				</div>
+				<div id="filterSummary" class="sectionHint" style="margin-top: 6px"></div>
+
 				<div id="emptyHistory" class="sectionHint" style="display: none; margin-top: 14px">
 					ยังไม่มีประวัติการยืนยันคำสั่งยา
 				</div>
@@ -36,6 +55,10 @@
 		<script>
 			const historyList = document.getElementById("historyList");
 			const emptyHistory = document.getElementById("emptyHistory");
+			const filterDate = document.getElementById("filterDate");
+			const filterDoctor = document.getElementById("filterDoctor");
+			const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+			const filterSummary = document.getElementById("filterSummary");
 
 			function loadConfirmedOrders() {
 				const raw = localStorage.getItem("medicineapp.confirmedOrders");
@@ -59,6 +82,34 @@
 				} catch {
 					return dateString;
 				}
+			}
+
+			function normalize(text) {
+				return String(text ?? "").trim().toLowerCase();
+			}
+
+			/** @param {any[]} orders */
+			function applyFilters(orders) {
+				const dateQ = filterDate.value;
+				const doctorQ = normalize(filterDoctor.value);
+
+				let result = Array.isArray(orders) ? orders.slice() : [];
+				if (dateQ) {
+					result = result.filter((o) => String(o?.date ?? "") === dateQ);
+				}
+				if (doctorQ) {
+					result = result.filter((o) => normalize(o?.doctorName).includes(doctorQ));
+				}
+
+				const total = Array.isArray(orders) ? orders.length : 0;
+				filterSummary.textContent =
+					dateQ || doctorQ
+						? `ผลลัพธ์: ${result.length} / ${total} รายการ`
+						: total > 0
+							? `ทั้งหมด: ${total} รายการ`
+							: "";
+
+				return result;
 			}
 
 			function render(orders) {
@@ -155,7 +206,21 @@
 				});
 			}
 
-			render(loadConfirmedOrders());
+			const allOrders = loadConfirmedOrders();
+			function refresh() {
+				render(applyFilters(allOrders));
+			}
+
+			filterDate.addEventListener("input", refresh);
+			filterDoctor.addEventListener("input", refresh);
+			clearFiltersBtn.addEventListener("click", () => {
+				filterDate.value = "";
+				filterDoctor.value = "";
+				refresh();
+				filterDoctor.focus();
+			});
+
+			refresh();
 		</script>
 	</body>
 </html>

@@ -79,30 +79,6 @@
 							</table>
 						</div>
 					</div>
-
-					<div class="divider"></div>
-
-					<div class="sectionTitleRow">
-						<h3 class="sectionTitle">วิธีต้มสมุนไพร</h3>
-						<p class="sectionHint">เลือกอย่างน้อย 1 วิธี</p>
-					</div>
-
-					<div class="checkboxList" role="group" aria-label="วิธีต้มสมุนไพร">
-						<label class="checkboxItem">
-							<input class="checkboxInput" type="checkbox" id="methodBoil" />
-							<span class="checkboxText">
-								<strong>วิธีการต้มเดือด</strong> : นำสมุนไพรใส่หม้อ ใส่น้ำ ท่วมตัวยาสมุนไพร จากนั้นต้มจนเดือดแล้วจับเวลา15นาที กรองยาเอาแค่น้ำ อุ่นยาทุกวันก่อนรับประทาน กินติดต่อกัน7วัน
-							</span>
-						</label>
-
-						<label class="checkboxItem">
-							<input class="checkboxInput" type="checkbox" id="methodSimmer" />
-							<span class="checkboxText">
-								<strong>วิธีการต้มเคี่ยว</strong> : ต้ม3ส่วนเอา1ส่วน ใส่น้ำ4เท่าของน้ำหนักยา(หรือประมาณ1.5ลิตร) จากนั้นต้มจนยาเหลือ1ใน3ของหม้อ แล้วทำซ้ำ3รอบ
-							</span>
-						</label>
-					</div>
-
 					<div class="formActions">
 						<button class="secondaryButton" type="button" id="backBtn">กลับไปหน้า “สั่งยา”</button>
 						<button class="primaryButton" type="button" id="confirmBtn">ยืนยันคำสั่งยา</button>
@@ -121,8 +97,8 @@
 			const emptyRow = document.getElementById("emptyRow");
 			const confirmBtn = document.getElementById("confirmBtn");
 			const backBtn = document.getElementById("backBtn");
-			const methodBoil = document.getElementById("methodBoil");
-			const methodSimmer = document.getElementById("methodSimmer");
+			const boilingMethodsText = document.getElementById("boilingMethodsText");
+			const missingMethods = document.getElementById("missingMethods");
 
 			let draftCache = null;
 
@@ -171,7 +147,17 @@
 					patientNameInput.value = draftCache?.patientName ?? "";
 					hnInput.value = draftCache?.hn ?? "";
 					renderTable(draftCache?.orderedMedicines ?? []);
-					confirmBtn.disabled = false;
+
+					const methods = Array.isArray(draftCache?.boilingMethods) ? draftCache.boilingMethods : [];
+					if (methods.length === 0) {
+						missingMethods.style.display = "block";
+						boilingMethodsText.textContent = "";
+						confirmBtn.disabled = true;
+					} else {
+						missingMethods.style.display = "none";
+						boilingMethodsText.textContent = `เลือก: ${methods.join(" / ")}`;
+						confirmBtn.disabled = false;
+					}
 				} catch {
 					missingDraft.style.display = "block";
 					renderTable([]);
@@ -196,21 +182,17 @@
 
 			function confirmDraft() {
 				if (!draftCache) return;
-				if (!methodBoil.checked && !methodSimmer.checked) {
-					alert("กรุณาเลือกวิธีต้มสมุนไพรอย่างน้อย 1 วิธี");
+				const methods = Array.isArray(draftCache?.boilingMethods) ? draftCache.boilingMethods : [];
+				if (methods.length === 0) {
+					alert("กรุณากลับไปหน้า “สั่งยา” เพื่อเลือกวิธีต้มสมุนไพรอย่างน้อย 1 วิธี");
 					return;
 				}
-
-				const boilingMethods = [];
-				if (methodBoil.checked) boilingMethods.push("วิธีการต้มเดือด");
-				if (methodSimmer.checked) boilingMethods.push("วิธีการต้มเคี่ยว");
 
 				const confirmedOrders = loadConfirmedOrders();
 				const id = `ord_${Date.now()}`;
 				confirmedOrders.unshift({
 					id,
 					...draftCache,
-					boilingMethods,
 					confirmedAt: new Date().toISOString(),
 				});
 				saveConfirmedOrders(confirmedOrders);
