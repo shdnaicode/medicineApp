@@ -40,6 +40,27 @@
 							autocomplete="off"
 						/>
 					</label>
+					<label class="field" style="min-width: 220px">
+						<span class="label">ค้นหาจาก HN</span>
+						<input
+							class="input"
+							type="search"
+							id="filterHN"
+							placeholder="กรอกเลข HN..."
+							inputmode="numeric"
+							autocomplete="off"
+						/>
+					</label>
+					<label class="field" style="flex: 1; min-width: 260px">
+						<span class="label">ค้นหาจากชื่อผู้ป่วย</span>
+						<input
+							class="input"
+							type="search"
+							id="filterPatient"
+							placeholder="พิมพ์ชื่อผู้ป่วย..."
+							autocomplete="off"
+						/>
+					</label>
 					<button class="secondaryButton" type="button" id="clearFiltersBtn">ล้าง</button>
 				</div>
 				<div id="filterSummary" class="sectionHint" style="margin-top: 6px"></div>
@@ -57,6 +78,8 @@
 			const emptyHistory = document.getElementById("emptyHistory");
 			const filterDate = document.getElementById("filterDate");
 			const filterDoctor = document.getElementById("filterDoctor");
+			const filterHN = document.getElementById("filterHN");
+			const filterPatient = document.getElementById("filterPatient");
 			const clearFiltersBtn = document.getElementById("clearFiltersBtn");
 			const filterSummary = document.getElementById("filterSummary");
 
@@ -92,6 +115,8 @@
 			function applyFilters(orders) {
 				const dateQ = filterDate.value;
 				const doctorQ = normalize(filterDoctor.value);
+				const hnQ = normalize(filterHN.value);
+				const patientQ = normalize(filterPatient.value);
 
 				let result = Array.isArray(orders) ? orders.slice() : [];
 				if (dateQ) {
@@ -100,10 +125,16 @@
 				if (doctorQ) {
 					result = result.filter((o) => normalize(o?.doctorName).includes(doctorQ));
 				}
+				if (hnQ) {
+					result = result.filter((o) => normalize(o?.hn).includes(hnQ));
+				}
+				if (patientQ) {
+					result = result.filter((o) => normalize(o?.patientName).includes(patientQ));
+				}
 
 				const total = Array.isArray(orders) ? orders.length : 0;
 				filterSummary.textContent =
-					dateQ || doctorQ
+					dateQ || doctorQ || hnQ || patientQ
 						? `ผลลัพธ์: ${result.length} / ${total} รายการ`
 						: total > 0
 							? `ทั้งหมด: ${total} รายการ`
@@ -213,9 +244,13 @@
 
 			filterDate.addEventListener("input", refresh);
 			filterDoctor.addEventListener("input", refresh);
+			filterHN.addEventListener("input", refresh);
+			filterPatient.addEventListener("input", refresh);
 			clearFiltersBtn.addEventListener("click", () => {
 				filterDate.value = "";
 				filterDoctor.value = "";
+				filterHN.value = "";
+				filterPatient.value = "";
 				refresh();
 				filterDoctor.focus();
 			});
