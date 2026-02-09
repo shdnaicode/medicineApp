@@ -83,14 +83,22 @@
 			const clearFiltersBtn = document.getElementById("clearFiltersBtn");
 			const filterSummary = document.getElementById("filterSummary");
 
-			function loadConfirmedOrders() {
-				const raw = localStorage.getItem("medicineapp.confirmedOrders");
-				if (!raw) return [];
+			async function loadConfirmedOrders() {
 				try {
-					const parsed = JSON.parse(raw);
-					return Array.isArray(parsed) ? parsed : [];
+					const resp = await fetch("/api/orders?status=confirmed");
+					const data = await resp.json();
+					if (!resp.ok || !data?.ok) throw new Error(data?.error || "Failed to load orders");
+					return Array.isArray(data.orders) ? data.orders : [];
 				} catch {
-					return [];
+					// Fallback: old localStorage behavior
+					const raw = localStorage.getItem("medicineapp.confirmedOrders");
+					if (!raw) return [];
+					try {
+						const parsed = JSON.parse(raw);
+						return Array.isArray(parsed) ? parsed : [];
+					} catch {
+						return [];
+					}
 				}
 			}
 
@@ -237,9 +245,13 @@
 				});
 			}
 
-			const allOrders = loadConfirmedOrders();
+			let allOrders = [];
 			function refresh() {
 				render(applyFilters(allOrders));
+			}
+			async function init() {
+				allOrders = await loadConfirmedOrders();
+				refresh();
 			}
 
 			filterDate.addEventListener("input", refresh);
@@ -255,7 +267,7 @@
 				filterDoctor.focus();
 			});
 
-			refresh();
+			init();
 		</script>
 	</body>
 </html>

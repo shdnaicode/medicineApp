@@ -79,6 +79,16 @@
 							</table>
 						</div>
 					</div>
+
+					<div class="divider"></div>
+
+					<div class="sectionTitleRow">
+						<h3 class="sectionTitle">วิธีต้มสมุนไพร</h3>
+						<p class="sectionHint" id="boilingMethodsText"></p>
+					</div>
+					<div id="missingMethods" class="fieldError" style="display: none">
+						ไม่พบข้อมูลวิธีต้มสมุนไพร กรุณากลับไปหน้า “สั่งยา”
+					</div>
 					<div class="formActions">
 						<button class="secondaryButton" type="button" id="backBtn">กลับไปหน้า “สั่งยา”</button>
 						<button class="primaryButton" type="button" id="confirmBtn">ยืนยันคำสั่งยา</button>
@@ -101,6 +111,7 @@
 			const missingMethods = document.getElementById("missingMethods");
 
 			let draftCache = null;
+			let backendOrderId = null;
 
 			function renderTable(orderedMedicines) {
 				orderedTableBody.querySelectorAll("tr[data-index]").forEach((row) => row.remove());
@@ -131,12 +142,50 @@
 				});
 			}
 
-			function loadDraft() {
+			async function loadDraft() {
+				const params = new URLSearchParams(window.location.search);
+				const idParam = params.get("orderId");
+				backendOrderId = idParam ? Number(idParam) : null;
+
+				if (backendOrderId && Number.isFinite(backendOrderId) && backendOrderId > 0) {
+					try {
+						const resp = await fetch(`/api/orders/${backendOrderId}`);
+						const data = await resp.json();
+						if (!resp.ok || !data?.ok) throw new Error(data?.error || "Failed to load order");
+
+						draftCache = data.order;
+						dateInput.value = draftCache?.date ?? "";
+						doctorNameInput.value = draftCache?.doctorName ?? "";
+						patientNameInput.value = draftCache?.patientName ?? "";
+						hnInput.value = draftCache?.hn ?? "";
+						renderTable(draftCache?.orderedMedicines ?? []);
+
+						const methods = Array.isArray(draftCache?.boilingMethods) ? draftCache.boilingMethods : [];
+						if (methods.length === 0) {
+							missingMethods.style.display = "block";
+							boilingMethodsText.textContent = "";
+							confirmBtn.disabled = true;
+						} else {
+							missingMethods.style.display = "none";
+							boilingMethodsText.textContent = `เลือก: ${methods.join(" / ")}`;
+							confirmBtn.disabled = false;
+						}
+
+						missingDraft.style.display = "none";
+						return;
+					} catch (err) {
+						// fall back to sessionStorage draft if backend is unavailable
+						backendOrderId = null;
+					}
+				}
+
 				const raw = sessionStorage.getItem("medicineapp.orderDraft");
 				if (!raw) {
 					missingDraft.style.display = "block";
 					renderTable([]);
 					confirmBtn.disabled = true;
+					missingMethods.style.display = "block";
+					boilingMethodsText.textContent = "";
 					return;
 				}
 
@@ -162,25 +211,12 @@
 					missingDraft.style.display = "block";
 					renderTable([]);
 					confirmBtn.disabled = true;
+					missingMethods.style.display = "block";
+					boilingMethodsText.textContent = "";
 				}
 			}
 
-			function loadConfirmedOrders() {
-				const raw = localStorage.getItem("medicineapp.confirmedOrders");
-				if (!raw) return [];
-				try {
-					const parsed = JSON.parse(raw);
-					return Array.isArray(parsed) ? parsed : [];
-				} catch {
-					return [];
-				}
-			}
-
-			function saveConfirmedOrders(orders) {
-				localStorage.setItem("medicineapp.confirmedOrders", JSON.stringify(orders));
-			}
-
-			function confirmDraft() {
+			async function confirmDraft() {
 				if (!draftCache) return;
 				const methods = Array.isArray(draftCache?.boilingMethods) ? draftCache.boilingMethods : [];
 				if (methods.length === 0) {
@@ -188,14 +224,34 @@
 					return;
 				}
 
-				const confirmedOrders = loadConfirmedOrders();
+				if (backendOrderId && Number.isFinite(backendOrderId) && backendOrderId > 0) {
+					confirmBtn.disabled = true;
+					try {
+						const resp = await fetch(`/api/orders/${backendOrderId}/confirm`, { method: "POST" });
+						const data = await resp.json();
+						if (!resp.ok || !data?.ok) throw new Error(data?.error || "Failed to confirm order");
+						sessionStorage.removeItem("medicineapp.orderDraft");
+						window.location.href = "historyMedicine.html";
+						return;
+					} catch (err) {
+						confirmBtn.disabled = false;
+						alert(`ยืนยันคำสั่งยาไม่สำเร็จ: ${String(err?.message || err)}`);
+						return;
+					}
+				}
+
+				// Fallback: old localStorage behavior (only used if backend isn't available)
+				const raw = localStorage.getItem("medicineapp.confirmedOrders");
+				let confirmedOrders = [];
+				try {
+					confirmedOrders = raw ? JSON.parse(raw) : [];
+					confirmedOrders = Array.isArray(confirmedOrders) ? confirmedOrders : [];
+				} catch {
+					confirmedOrders = [];
+				}
 				const id = `ord_${Date.now()}`;
-				confirmedOrders.unshift({
-					id,
-					...draftCache,
-					confirmedAt: new Date().toISOString(),
-				});
-				saveConfirmedOrders(confirmedOrders);
+				confirmedOrders.unshift({ id, ...draftCache, confirmedAt: new Date().toISOString() });
+				localStorage.setItem("medicineapp.confirmedOrders", JSON.stringify(confirmedOrders));
 				sessionStorage.removeItem("medicineapp.orderDraft");
 				window.location.href = "historyMedicine.html";
 			}

@@ -394,8 +394,33 @@
 					boilingMethods,
 				};
 
+				// Keep local draft as fallback, but prefer sending to backend.
 				sessionStorage.setItem("medicineapp.orderDraft", JSON.stringify(payload));
-				window.location.href = "organizeMedicine.html";
+
+				const submitBtn = orderForm.querySelector('button[type="submit"]');
+				if (submitBtn) submitBtn.disabled = true;
+
+				fetch("/api/orders/draft", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify(payload),
+				})
+					.then(async (resp) => {
+						const data = await resp.json().catch(() => ({}));
+						if (!resp.ok || !data?.ok) {
+							throw new Error(data?.error || "ไม่สามารถบันทึกคำสั่งยาได้");
+						}
+						return data;
+					})
+					.then((data) => {
+						window.location.href = `organizeMedicine.html?orderId=${encodeURIComponent(String(data.orderId))}`;
+					})
+					.catch((err) => {
+						// Backend unavailable: proceed with local draft flow
+						if (submitBtn) submitBtn.disabled = false;
+						alert(`เชื่อมต่อระบบหลังบ้านไม่ได้ กำลังใช้โหมดออฟไลน์ชั่วคราว: ${String(err?.message || err)}`);
+						window.location.href = "organizeMedicine.html";
+					});
 			});
 
 			setTodayIfEmpty();
